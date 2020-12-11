@@ -1,3 +1,17 @@
+# Write a Data Science blog post
+
+1st Project in the Udacity Data Scientist Nanodegree
+_______________________________________________________________________________________________________________________________________________________________________________
+
+# Table of Contents
+Installation
+Project Motivation
+File Description
+Results
+Licensing, Authors, and Acknowledgements
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 1. Installations
 
 clone repo ??
