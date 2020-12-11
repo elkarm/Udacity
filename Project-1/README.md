@@ -17,7 +17,7 @@ ________________________________________________________________________________
 
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-1. Installation
+## 1. Installation
 
 This code runs with Python version 3.* and uses Google Colab tool.
 
@@ -28,7 +28,7 @@ Data url: https://insights.stackoverflow.com/survey
 $git clone https://github.com/elkarm/Udacity/edit/main/Project-1.git
 
 
-2. Project Motivation
+## 2. Project Motivation
 
 Udacity Data Science course blog post project on Stack Overflow survey data 2020. Based on this data I explored the following questions:
 
@@ -44,14 +44,14 @@ e. What are the most desired languages between UK and Greece?
 
 
 
-3. File Description
+## 3. File Description
 
 Writing_a_data_sciencist_blog_post.ipynb: Notebook containing the data analysis.
 
-4. Results
+## 4. Results
 
 The main findings of the code can be found at the post available in the following URL (https://medium.com/@elkar/what-is-the-best-country-for-a-developer-for-2020-uk-or-greece-d19a9732cd06)
 
-5. Licensing, Authors, Acknowledgements, etc.
+## 5. Licensing, Authors, Acknowledgements, etc.
 
 Must give credit to Stackoverflow for the data. You can find the Licensing for the data and other descriptive information at the Stackoverflow link available here.
