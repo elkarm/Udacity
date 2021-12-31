@@ -29,14 +29,14 @@ def tokenize(text):
 #engine = create_engine('sqlite:////home/workspace/data/DisasterResponse.db')
 #df = pd.read_sql_table('DisasterRespone.db', engine)
 
-database_filepath = '/home/workspace/data/DisasterResponse.db'
+database_filepath = '../data/DisasterResponse.db'
 engine = create_engine('sqlite:///' + database_filepath)
 table_name = database_filepath.split('/')[-1]
 table_name = table_name.split('.')[0]
 df = pd.read_sql_table(table_name,engine)
     
 # load model
-model = joblib.load("/home/workspace/models/classifier.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
