@@ -1,0 +1,366 @@
+# installations
+! pip install seaborn==0.9.0
+
+
+# *****************************************************************************************************************************
+# labrary imports
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+
+# from datetime import date,timedelta
+# import time
+# today = date.today().strftime("%d/%m/%Y")
+
+# # deactivate scientific notation
+# pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
+# expand cells
+from IPython.core.display import display, HTML
+display(HTML("<style>.container { width:100% !important; }</style>"))
+
+
+from engine.utilities import *
+from engine.dataPreperation import *
+
+
+# *****************************************************************************************************************************
+# REPORT FOR CLEANING DATA
+
+# instasiate data_cleaning class
+dc = data_cleaning()
+
+# read data
+data = dc.data_reading('PS_20174392719_1491204439457_log.csv')
+
+data = dc.drop_miss_dublicates(data)
+
+data = dc.cust_merch_ind(data)
+
+
+data = dc.orig_entity_position_freq(data)
+data = dc.dest_entity_position_freq(data)
+
+# show the min/max values of different numberic values to understand the data
+print("min/max of amount, old balance Orgi and Dest per type")
+agg_functions = ['min','max']
+data[['type','amount','oldbalanceOrg','oldbalanceDest']].groupby(['type']).agg({'amount':agg_functions
+                                                                               ,'oldbalanceOrg':agg_functions
+                                                                               ,'oldbalanceDest':agg_functions})
+print("RESULT: the volumes have very broad ranges.\n ")
+
+print("min/max or count/sum of amount, old balance Orgi and Dest per type and fraud target flag ")
+agg_functions = ['min','max']
+display(data[['type','isFraud','amount','oldbalanceOrg','oldbalanceDest']].groupby(['type','isFraud']).agg({'amount':agg_functions
+                                                                               ,'oldbalanceOrg':agg_functions
+                                                                               ,'oldbalanceDest':agg_functions
+                                                                               ,'isFraud':['count','sum']}))
+
+print("RESULT: the count of Fraudulent transactions shows that they appear in 'CASH OUT' and 'TRANSFER' transaction types only \n")
+
+
+print("min/max or count/sum of amount, old balance Orgi and Dest per type of Originator and Destination and Fraud Flag")
+display(data[['ext_org_ind','ext_den_ind','isFraud','amount','oldbalanceOrg','oldbalanceDest']].groupby(['ext_org_ind','ext_den_ind','isFraud']).agg({'amount':agg_functions
+                                                                               ,'oldbalanceOrg':agg_functions
+                                                                               ,'oldbalanceDest':agg_functions
+                                                                               ,'isFraud':['count','sum']}))
+print("RESULT: the count of Fraudulent transactions shows that only when customers in a transaction are involved cause fraudulent transactions \n")
+
+
+print("min/max or count/sum of amount, old balance Orgi and Dest per type of Originator and Destination, transaction type and Fraud Flag")
+display(data[['type','ext_org_ind','ext_den_ind','isFraud','amount','oldbalanceOrg','oldbalanceDest']].groupby(['type','ext_org_ind','ext_den_ind','isFraud']).agg({'amount':agg_functions
+                                                                               ,'oldbalanceOrg':agg_functions
+                                                                               ,'oldbalanceDest':agg_functions
+                                                                               ,'isFraud':['count','sum']}))
+print("RESULT: the count of Fraudulent transactions shows that they appear in 'CASH OUT' and 'TRANSFER' transaction types only,\nand on top any 'PAYMENT' transactions do not have Balance of destination as expected  \n")
+
+
+
+data = dc.check_balances('Orig', 'oldbalanceOrg', 'newbalanceOrig', data)
+
+data = dc.check_balances('Dest', 'oldbalanceDest', 'newbalanceDest', data)
+
+print("\nData table after add-ons...")
+display(data.head())
+
+
+
+# check amount (zero values + scatter plot + candle plot)
+
+display_side_by_side(data.loc[data['amount'] == 0].agg({'amount':['count','sum']})
+                    ,data.loc[(data['amount'] >= -1) & (data['amount'] <= 1)].agg({'amount':['count','sum']})
+                    ,data.loc[(data['amount'] <0) ].agg({'amount':['count','sum']})
+                    ,titles = [" amount == 0", """adding weird rounds to the 0 values \n(data['amount'] >= -1) & (data['amount'] <= 1)""", """\namount negative values"""])
+
+
+
+data.plot.scatter(x='step',y='amount')
+sns.lmplot(x='step',y='amount', data=data, hue='isFraud', fit_reg=False)
+sns.catplot(x="isFraud", y="amount", data=data)
+
+
+data = dc.dummy_variables(data)
+
+
+dc.save_clean_df(data)
+
+
+
+
+# *****************************************************************************************************************************
+import glob
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split,learning_curve
+from random import sample
+from sklearn.linear_model import LogisticRegression
+from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.cross_validation import cross_val_score
+from sklearn import metrics
+from IPython.display import Image  
+from pydotplus import graph_from_dot_data
+
+
+
+
+
+
+
+# *****************************************************************************************************************************
+import glob
+import pandas as pd
+import numpy as np
+from engine.OutlierMeasures import *
+
+class modeling_preparation():
+    
+    def __init__(self):
+        pass
+
+    def read_cleaned_df(self):    
+        """function to idenitify and read the latest clean file
+
+           INPUT: None
+           OUTPUT: dataframe"""
+        t0= time.time()
+
+        # get list of cleaned files
+        list_of_files = glob.glob('datasetFraud*.csv') # * means all if need specific format then *.csv
+        latest_file = max(list_of_files, key=os.path.getctime)
+
+        # read most recent file
+        print("file that will be used for this run is: {}".format(latest_file))
+        print("reading file...")
+        data = pd.read_csv(latest_file)
+        data = data.loc[:, ~data.columns.str.contains('^Unnamed')]
+
+        # fill in null values
+        print("filling N/A...")
+        data.fillna(0,inplace=True)
+        display(data.head())
+
+        print("date: {}   runtime: {}".format(today,str(timedelta(seconds=(time.time()-t0)))))
+
+        return data
+    
+    
+    def run(self):
+        data = self.read_cleaned_df()
+        
+        om = outlier_measures(data)
+        data = om.run()
+        
+        return data
+        
+        
+        
+        
+        
+# *****************************************************************************************************************************
+data = modeling_preparation()
+
+
+# *****************************************************************************************************************************
+# labrary imports
+import glob
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split,learning_curve
+from random import sample
+from sklearn.linear_model import LogisticRegression
+from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.cross_validation import cross_val_score
+from sklearn import metrics
+
+%matplotlib inline
+
+from datetime import date,timedelta
+import time
+from scipy import stats
+
+
+# show all columns
+pd.set_option("display.max_columns", None)
+
+# deactivate scientific notation
+pd.set_option('display.float_format', lambda x: '%.3f' % x)
+
+class models_comparison():
+    
+    """class to split and compare how different model perform on the dataset
+       
+       IPNUT: data = dataframe for analysis
+              models_to_compare = dictionary of models and their names to be used for comparison so the best model to be choosen by the user
+              
+       OUTPUT: a results table to show the models fit on the model and their performance"""
+    
+    def __init__(self,data, models_to_compare):
+        self.data = data
+        self.models_to_compare = models_to_compare
+        self.model_rslts = pd.DataFrame(columns = ['model','accuracy','precision','recall','f1', 'cv_precision'])
+        self.today = date.today().strftime("%d/%m/%Y")
+        
+        
+
+    def split_into_train_test(data,target,exclude_x_cols = ['type','isFlaggedFraud', 'isFraud']):
+        """method to split data to training/test and indepented and target variables
+        
+           INPUT: data = dataframe to split
+                  target = the target variable
+                  exclude_x_cols = any extra columns to exclude from the variables
+                  
+            OUTPUT: split data : x_train, x_test, y_train, y_test"""
+        t0= time.time()
+
+        # split the dataset to the variables and the target
+        print("spliting data to variables(x) and target(y)...")
+        x = self.data[[col for self.col in data.columns if col not in exclude_x_cols]]
+        y = self.data[target]
+
+        # split x,y to train and test now so there is no data leceage later in the script
+        print("spliting data to train and test...")
+        x_train, x_test, y_train, y_test = train_test_split(x, y)
+
+        print("date: {}   runtime: {}".format(self.today,str(timedelta(seconds=(time.time()-t0)))))
+
+        return x_train, x_test, y_train, y_test
+
+
+
+
+
+    def model_running(title, model,x_train=x_train,y_train=y_train,x_test=x_test,y_test=y_test, model_rslts = None):
+         """Method to evaluate the model. It fits the model, and create metrics to evaluate the performance
+        
+           INPUT: title = title of the model
+                  model = the model class to be used
+                  model_rslts = dataframe to save the model accuracy metrics results for comparison
+                  
+           OUTPUT: prints steps in the process and the accuracy results"""
+        
+        t0= time.time()
+        
+        if model_rslts is None:
+            model_rslts = self.model_rslts
+        
+        
+        # Instantiate
+        print("\n\ninstansiate model '{}' ...".format(title))
+        model_inst = model   
+
+        # Fit
+        print("model fitting...")
+        model_fit = model_inst.fit(x_train, y_train)
+
+        # accuracy
+        print("model accuracy for trained data = {}".format(model_fit.score(x_train, y_train)))
+
+
+        # show the importance of the variables used for the model
+        try:
+            # get importance
+            print("get importance...")
+            importance = model.feature_importances_
+            
+            imps = sorted(zip(map(lambda x: round(x, 4), rf.feature_importances_), x_train), reverse=True)
+            imps_df = pd.DataFrame(imps,columns=['importance','feature'])
+            imps_df.sort_values(by='importance', ascending=False)
+
+            fig = plt.figure(figsize = (14, 9))
+            imps_df.plot.barh(x='feature',y='importance')
+            plt.title("variables per importance for the model")
+            plt.show()
+            
+        except:
+            print("importance function diffes for the specific model")
+
+        # Predictions/probs on the test dataset
+        print("predictions and probs on test dataset...")
+        predicted = pd.DataFrame(model_fit.predict(x_test))
+        probs = pd.DataFrame(model_fit.predict_proba(x_test))
+
+        # Store metrics
+        print("calculate metrics...")
+        accuracy = metrics.accuracy_score(y_test, predicted)
+        roc_auc = metrics.roc_auc_score(y_test, probs[1])
+        confus_matrix = metrics.confusion_matrix(y_test, predicted)
+        classification_report = metrics.classification_report(y_test, predicted)
+        precision = metrics.precision_score(y_test, predicted, pos_label=1)
+        recall = metrics.recall_score(y_test, predicted, pos_label=1)
+        f1 = metrics.f1_score(y_test, predicted, pos_label=1)
+
+        # Evaluate the model using 10-fold cross-validation
+        print("calculate cross-validation...")
+        cv_scores = cross_val_score(model, x_test, y_test, scoring='precision', cv=10)
+        cv_mean = np.mean(cv_scores)
+
+        print("Store metrics...")
+        self.model_rslts = self.model_rslts.append({'model':title
+                               ,'accuracy':accuracy
+                               ,'precision':precision
+                               ,'recall':recall
+                               ,'f1':f1
+                               ,'cv_precision':cv_mean },ignore_index=True)
+
+        self.model_rslts.sort_values(by='precision', ascending=False)
+
+        print("date: {}   runtime: {}".format(self.today,str(timedelta(seconds=(time.time()-t0)))))
+        
+    def run(self):
+        
+        x_train, x_test, y_train, y_test = self.split_into_train_test(data,'isFraud')
+        
+        
+        for title, model in self.models_to_compare.items():
+            self.model_eval(title, model)
+            
+        display(self.model_rslts.sort_values(by='precision', ascending=False))
+
+# *****************************************************************************************************************************
+
+from sklearn.linear_model import LogisticRegression
+from sklearn import tree
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+
+models_cons = {'Logistic Regression': LogisticRegression()
+              ,'Decision Tree'      : tree.DecisionTreeClassifier(max_depth=3)
+              ,'Random Forest'      : RandomForestClassifier()
+              ,'TWO CLASS BAYES'    : GaussianNB()}
+
+mc = models_comparison(data,models_cons)
+mc.run()
