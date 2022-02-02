@@ -50,7 +50,7 @@ Instructions for running the notebook:
 
 
 Results
-The best performing model is chosen based on a compination of the accuracy, precision, recal, F1 and cross-validation metrics. The best performing model for the specific classification is the random forest which showed very good results in all the metrics.
+The best performing model is chosen based on a compination of the accuracy, precision, recal, F1 and cross-validation metrics. The best performing model for the specific classification is the random forest classifier which showed very good results in all the metrics.
 The jupiter notebook alo provides some exploratory analysis on the dataset with some insights to the data. Finally, we use this machine learning model trained on the full dataset and save it in a pickle file for future use.
 
 ## Licensing, Authors, Acknowledgements.
