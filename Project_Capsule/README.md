@@ -56,9 +56,13 @@ step     type      amount     nameOrig   oldbalanceOrg   newbalanceOrig    nameD
 
 ## Installation
 Jupyter notebook
+
 Python3
+
 Numpy, Pandas
+
 Data Visualization: Plotly, Seaborn, Matplotlib
+
 sklearn, pickle, scipy
 
 
