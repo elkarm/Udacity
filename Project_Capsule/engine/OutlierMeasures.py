@@ -3,6 +3,8 @@ import numpy as np
 from datetime import date,timedelta
 import time
 from scipy import stats
+#from scipy.spatial import distance
+ 
 
 
 class outlier_measures():
@@ -21,6 +23,7 @@ class outlier_measures():
         self.cols = cols
         self.z_threshold = 3
         self.today = date.today().strftime("%d/%m/%Y")
+        
         
 
     def z_score(self):
